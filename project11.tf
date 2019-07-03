@@ -119,7 +119,7 @@ resource "aws_autoscaling_group" "project11_auto" {
 }
 
 resource "aws_elb" "project11_elb"{
-  name = "ravi-elb"
+  name = "project11-elb"
   subnets = ["${aws_subnet.project11_subnet_a1.id}", "${aws_subnet.project11_subnet_b1.id}"]
   security_groups =["${aws_security_group.project11_sg.id}"]
   listener{ 
