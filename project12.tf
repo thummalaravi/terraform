@@ -3,7 +3,6 @@ provider "aws" {
   secret_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   region     = "us-east-2"
 }
-
 # vpc creation.
 resource "aws_vpc" "project12_customised" {
   cidr_block = "10.10.0.0/16"
@@ -23,9 +22,19 @@ resource "aws_subnet" "project12_public_subnet_a1" {
   }
 }
 
+# pvt subnet a2
+resource "aws_subnet" "project12_pvt_subnet_a2" {
+  vpc_id     = "${aws_vpc.project12_customised.id}"
+  cidr_block = "10.10.0.32/27"
+  availability_zone = "us-east-2a"
+
+  tags = {
+    Name = "project12_pvt_subnet_a2"
+  }
+}
 
 # public subnet  b1
-resource "aws_subnet" "project12_Public_subnet_b1" {
+resource "aws_subnet" "project12_public_subnet_b1" {
   vpc_id     = "${aws_vpc.project12_customised.id}"
   cidr_block = "10.10.0.64/27"
   availability_zone = "us-east-2b"
@@ -35,16 +44,7 @@ resource "aws_subnet" "project12_Public_subnet_b1" {
   }
 }
 
-# pvt subnet b2
-resource "aws_subnet" "project12_pvt_subnet_b2" {
-  vpc_id     = "${aws_vpc.project12_customised.id}"
-  cidr_block = "10.10.0.96/27"
-  availability_zone = "us-east-2b"
 
-  tags = {
-    Name = "project12_pvt_subnet_b2"
-  }
-}
 
 
 
@@ -69,14 +69,14 @@ resource "aws_internet_gateway" "project12_igw" {
   }
 }
 
-resource "aws_eip" "nat" {
+resource "aws_eip" "project12_nat_eip" {
  vpc = true
 }
 
 resource "aws_nat_gateway" "project12_nat"{
   subnet_id   = "${aws_subnet.project12_public_subnet_a1.id}"
-  depends_on = ["aws_eip.nat"]
-  allocation_id = "${aws_eip.nat.id}"
+  depends_on = ["aws_eip.project12_nat_eip"]
+  allocation_id = "${aws_eip.project12_nat_eip.id}"
   tags = {
    Name =  "project12_nat"
  }
@@ -88,7 +88,12 @@ resource "aws_route_table_association" "project12_rt_public_ass" {
   route_table_id = "${aws_route_table.project12_rt_public.id}"
 }
 
-resource "aws_default_route_table" "pvt_asso" {
+resource "aws_route_table_association" "project12_rt_public_assaction" {
+  subnet_id      = "${aws_subnet.project12_public_subnet_b1.id}"
+  route_table_id = "${aws_route_table.project12_rt_public.id}"
+}
+
+resource "aws_default_route_table" "project12_pvt_asso" {
 
   default_route_table_id = "${aws_vpc.project12_customised.default_route_table_id}"
   tags = {
@@ -101,10 +106,10 @@ resource "aws_default_route_table" "pvt_asso" {
   }
 }
 
-resource "aws_route_table_association" "rt_pvt_ass" {
+resource "aws_route_table_association" "project12_rt_pvt_ass" {
 
-  subnet_id      = "${aws_subnet.project12_pvt_subnet_b2.id}"
- route_table_id = "${aws_default_route_table.pvt_asso.id}"
+  subnet_id = "${aws_subnet.project12_pvt_subnet_a2.id}"
+ route_table_id = "${aws_default_route_table.project12_pvt_asso.id}"
   
 }
 
@@ -126,7 +131,7 @@ resource "aws_security_group" "project12_sg" {
  
 }
 
-resource "aws_launch_configuration" "as_conf" {
+resource "aws_launch_configuration" "project12_conf" {
   name_prefix   = "project12-lc"
    image_id      = "ami-0c55b159cbfafe1f0"
   instance_type = "t2.micro"
@@ -135,18 +140,24 @@ resource "aws_launch_configuration" "as_conf" {
 
 resource "aws_autoscaling_group" "project12_auto" {
    availability_zones = ["us-east-2"]
-  launch_configuration = "${aws_launch_configuration.as_conf.name}"
+  launch_configuration = "${aws_launch_configuration.project12_conf.name}"
   name = "project12_asg"
-  vpc_zone_identifier  = ["${aws_subnet.project12_pvt_subnet_b2.id}"]
+  vpc_zone_identifier  = ["${aws_subnet.project12_pvt_subnet_a2.id}"]
   
    desired_capacity   = 1
   max_size           =4
   min_size           = 1
+  tag {
+      key                 = "project12"
+      value               = "newproject12"
+      propagate_at_launch = true
+    }
+  
 }
 
 resource "aws_elb" "project12_elb"{
-  name = "project12_elb"
-  subnets = ["${aws_subnet.project12_public_subnet_a1.id}", "${aws_subnet.project12_Public_subnet_b1.id}"]
+  name = "project12-elb"
+  subnets = ["${aws_subnet.project12_public_subnet_a1.id}", "${aws_subnet.project12_public_subnet_b1.id}"]
   security_groups =["${aws_security_group.project12_sg.id}"]
   listener{ 
 instance_port = 80
@@ -180,4 +191,3 @@ resource "aws_route53_record" "raviproject2" {
 
 
   
-
