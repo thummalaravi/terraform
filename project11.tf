@@ -13,26 +13,36 @@ tags = {
   }
 }
 #public subnet 1a
-resource "aws_subnet" "project11_subnet_a1" {
+resource "aws_subnet" "project11_public_subnet_a1" {
   vpc_id     = "${aws_vpc.project11_customised.id}"
   cidr_block = "10.10.0.0/27"
   availability_zone = "us-east-2a"
 
   tags = {
-    Name = "project11_subnet_a1"
+    Name = "project11_public_subnet_a1"
   }
 }
 # public subnet  b1
-resource "aws_subnet" "project11_subnet_b1" {
+resource "aws_subnet" "project11_public_subnet_b1" {
   vpc_id     = "${aws_vpc.project11_customised.id}"
   cidr_block = "10.10.0.32/27"
   availability_zone = "us-east-2b"
 
   tags = {
-    Name = "project11_subnet_b1"
+    Name = "project11_public_subnet_b1"
   }
 }
 
+# public subnet  c1
+resource "aws_subnet" "project11_public_subnet_c1" {
+  vpc_id     = "${aws_vpc.project11_customised.id}"
+  cidr_block = "10.10.0.64/27"
+  availability_zone = "us-east-2c"
+
+  tags = {
+    Name = "project11_public_subnet_c1"
+  }
+}
 
 # route table creation
 resource "aws_route_table" "project11_rt" {
@@ -56,9 +66,13 @@ resource "aws_internet_gateway" "project11_igw" {
   }
 }
 
-
 resource "aws_route_table_association" "project11_rt_ass" {
-  subnet_id      = "${aws_subnet.project11_subnet_a1.id}"
+  subnet_id      = "${aws_subnet.project11_public_subnet_a1.id}"
+  route_table_id = "${aws_route_table.project11_rt.id}"
+}
+
+resource "aws_route_table_association" "project11_rt_associate" {
+  subnet_id      = "${aws_subnet.project11_public_subnet_b1.id}"
   route_table_id = "${aws_route_table.project11_rt.id}"
 }
 
@@ -70,12 +84,13 @@ resource "aws_default_route_table" "project11_asso" {
   }
 }
 
-resource "aws_route_table_association" "rt_ass" {
+resource "aws_route_table_association" "project11_ass" {
 
-  subnet_id      = "${aws_subnet.project11_subnet_b1.id}"
+  subnet_id      = "${aws_subnet.project11_public_subnet_c1.id}"
  route_table_id = "${aws_default_route_table.project11_asso.id}"
   
 }
+
 resource "aws_security_group" "project11_sg" {
   name = "project11_sg"
   vpc_id = "${aws_vpc.project11_customised.id}"
@@ -106,21 +121,27 @@ resource "aws_launch_configuration" "project11_conf" {
   instance_type = "t2.micro"
   associate_public_ip_address = true
   security_groups =["${aws_security_group.project11_sg.id}"]
-}
+  }
 
 resource "aws_autoscaling_group" "project11_auto" {
    availability_zones = ["us-east-2a"]
    name = "project11_auto"
   launch_configuration = "${aws_launch_configuration.project11_conf.name}"
-  vpc_zone_identifier  = ["${aws_subnet.project11_subnet_a1.id}"]
+  vpc_zone_identifier  = ["${aws_subnet.project11_public_subnet_a1.id}"]
      desired_capacity   = 2
   max_size           =4
   min_size           = 1
-}
+ tag {
+      key                 = "project11"
+      value               = "newproject11"
+      propagate_at_launch = true
+    }
+  
+  }
 
 resource "aws_elb" "project11_elb"{
   name = "project11-elb"
-  subnets = ["${aws_subnet.project11_subnet_a1.id}", "${aws_subnet.project11_subnet_b1.id}"]
+  subnets = ["${aws_subnet.project11_public_subnet_a1.id}", "${aws_subnet.project11_public_subnet_b1.id}"]
   security_groups =["${aws_security_group.project11_sg.id}"]
   listener{ 
 instance_port = 80
