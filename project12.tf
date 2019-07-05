@@ -145,7 +145,7 @@ resource "aws_launch_configuration" "project12_conf" {
 }
 
 resource "aws_autoscaling_group" "project12_auto" {
-   availability_zones = ["us-east-2"]
+   availability_zones = ["us-east-2a"]
   launch_configuration = "${aws_launch_configuration.project12_conf.name}"
   name = "project12_asg"
   vpc_zone_identifier  = ["${aws_subnet.project12_pvt_subnet_a2.id}"]
