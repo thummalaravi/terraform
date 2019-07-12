@@ -44,20 +44,6 @@ resource "aws_subnet" "project11_public_subnet_c1" {
   }
 }
 
-# route table creation
-resource "aws_route_table" "project11_rt" {
-   vpc_id = "${aws_vpc.project11_customised.id}"
-  
- tags = {
-   Name = "project11_rt" 
-   }
-   
-    route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = "${aws_internet_gateway.project11_igw.id}"
-  }
-}
-
 resource "aws_internet_gateway" "project11_igw" {
   vpc_id = "${aws_vpc.project11_customised.id}"
 
@@ -66,29 +52,34 @@ resource "aws_internet_gateway" "project11_igw" {
   }
 }
 
-resource "aws_route_table_association" "project11_rt_ass" {
-  subnet_id      = "${aws_subnet.project11_public_subnet_a1.id}"
-  route_table_id = "${aws_route_table.project11_rt.id}"
-}
-
-resource "aws_route_table_association" "project11_rt_associate" {
-  subnet_id      = "${aws_subnet.project11_public_subnet_b1.id}"
-  route_table_id = "${aws_route_table.project11_rt.id}"
-}
-
 resource "aws_default_route_table" "project11_asso" {
 
   default_route_table_id = "${aws_vpc.project11_customised.default_route_table_id}"
   tags = {
   Name = "project11_asso"
+   }
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = "${aws_internet_gateway.project11_igw.id}"
   }
 }
 
 resource "aws_route_table_association" "project11_ass" {
 
+  subnet_id      = "${aws_subnet.project11_public_subnet_a1.id}"
+ route_table_id = "${aws_default_route_table.project11_asso.id}"
+}
+
+resource "aws_route_table_association" "project11_ass_b1" {
+
+  subnet_id      = "${aws_subnet.project11_public_subnet_b1.id}"
+ route_table_id = "${aws_default_route_table.project11_asso.id}"
+}
+
+resource "aws_route_table_association" "project11_ass_c1" {
+
   subnet_id      = "${aws_subnet.project11_public_subnet_c1.id}"
  route_table_id = "${aws_default_route_table.project11_asso.id}"
-  
 }
 
 resource "aws_security_group" "project11_sg" {
