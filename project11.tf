@@ -128,6 +128,7 @@ resource "aws_autoscaling_group" "project11_auto" {
    name = "project11_auto"
   launch_configuration = "${aws_launch_configuration.project11_conf.name}"
   vpc_zone_identifier  = ["${aws_subnet.project11_public_subnet_a1.id}"]
+  load_balancers = ["${aws_elb.project11_elb.name}"]
      desired_capacity   = 2
   max_size           =4
   min_size           = 1
