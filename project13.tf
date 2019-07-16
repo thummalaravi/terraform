@@ -127,7 +127,8 @@ resource "aws_autoscaling_group" "project13_auto" {
    availability_zones = ["us-east-2a"]
    name = "project13_auto"
   launch_configuration = "${aws_launch_configuration.project13_conf.name}"
-  vpc_zone_identifier  = ["${aws_subnet.project13_public_subnet_a1.id}","${aws_subnet.project13_public_subnet_b1.id}","${aws_subnet.project13_public_subnet_c1.id}" ]
+  vpc_zone_identifier  = ["${aws_subnet.project13_public_subnet_a1.id}","${aws_subnet.project13_public_subnet_b1.id}",
+	  "${aws_subnet.project13_public_subnet_c1.id}" ]
      desired_capacity   = 2
   max_size           =4
   min_size           = 1
@@ -146,7 +147,8 @@ resource "aws_eip" "project13_eip" {
 
 resource "aws_elb" "project13_elb"{
   name = "project13-elb"
-  subnets = ["${aws_subnet.project13_public_subnet_a1.id}", "${aws_subnet.project13_public_subnet_b1.id}", "${aws_subnet.project13_public_subnet_c1.id}"]
+  subnets = ["${aws_subnet.project13_public_subnet_a1.id}", "${aws_subnet.project13_public_subnet_b1.id}", 
+	  "${aws_subnet.project13_public_subnet_c1.id}"]
   security_groups =["${aws_security_group.project13_sg.id}"]
   listener{ 
 instance_port = 80
