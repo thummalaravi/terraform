@@ -101,6 +101,12 @@ resource "aws_security_group" "project13_sg" {
       protocol    = "tcp"
       cidr_blocks = ["0.0.0.0/0"]
   }
+ ingress {
+      from_port   = 8080
+      to_port     = 8080
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+  }
  egress {
     from_port   = 0
     to_port     = 0
@@ -134,6 +140,10 @@ load_balancers = ["${aws_elb.project13_elb.name}"]
   
   }
 
+resource "aws_eip" "project13_eip" {
+ vpc = true
+}
+
 resource "aws_elb" "project13_elb"{
   name = "project13-elb"
   subnets = ["${aws_subnet.project13_public_subnet_a1.id}", "${aws_subnet.project13_public_subnet_b1.id}", "${aws_subnet.project13_public_subnet_c1.id}"]
@@ -146,3 +156,40 @@ instance_port = 80
  }
  cross_zone_load_balancing = true
 }
+
+# route 53
+resource "aws_route53_zone" "raviproject2" {
+	
+  name = "raviproject2.tk"
+}
+
+resource "aws_route53_record" "raviproject2" {
+#terraform import aws_route53_zone.raviproject2. Z264VR5H0D90T1
+  zone_id = "${aws_route53_zone.raviproject2.id}"
+  name    = "project13.raviproject2.tk"
+  type    = "A"
+
+  alias {
+   name                   = "${aws_elb.project13_elb.dns_name}"
+   zone_id                = "${aws_elb.project13_elb.zone_id}"
+    evaluate_target_health = true
+    }
+}
+
+resource "aws_instance" "project13_public" {
+  ami           = "ami-01a3c164e506523ad" 
+  instance_type = "t2.micro"
+  security_groups =["${aws_security_group.project13_sg.id}"]
+  subnet_id  = "${aws_subnet.project13_public_subnet_c1.id}"
+  associate_public_ip_address = "true"
+
+}
+
+resource "aws_eip_association" "eip_assoc" {
+  instance_id   = "${aws_instance.project13_public.id}"
+  allocation_id = "${aws_eip.project13_eip.id}"
+}
+
+
+# “terraform import aws_route53_zone.raviproject2 Z264VR5H0D90T1”
+# “terraform destroy -target aws_route53_zone.raviproject2”
