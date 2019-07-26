@@ -243,3 +243,22 @@ instance_port = 80
  }
  cross_zone_load_balancing = true
 }
+
+# route 53
+resource "aws_route53_zone" "raviproject2" {
+	
+  name = "raviproject2.tk"
+}
+
+resource "aws_route53_record" "raviproject2" {
+#terraform import aws_route53_zone.raviproject2. Z264VR5H0D90T1
+  zone_id = "${aws_route53_zone.raviproject2.id}"
+  name    = "project13.raviproject2.tk"
+  type    = "A"
+
+  alias {
+   name                   = "${aws_elb.project14_elb.dns_name}"
+   zone_id                = "${aws_elb.project14_elb.zone_id}"
+    evaluate_target_health = true
+    }
+}
