@@ -121,7 +121,7 @@ resource "aws_nat_gateway" "project14_nat"{
   subnet_id   = "${aws_subnet.project14_public_subnet_a1.id}"
   depends_on = ["aws_eip.project14_nat_eip"]
   allocation_id = "${aws_eip.project14_nat_eip.id}"
-  tags = {d
+  tags = {
    Name =  "project14_nat"
  }
 }
