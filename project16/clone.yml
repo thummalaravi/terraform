@@ -1,0 +1,42 @@
+---
+-
+  hosts: webservers
+  become: true
+  tasks:
+
+
+  - name: Remove old files srv
+    file:
+      path: /srv
+      state: absent
+
+
+  - name: Remove old files in html
+    file:
+      path: /var/www/html/
+      state: absent
+  -
+    git:
+        repo: https://github.com/thummalaravi/website.git
+        dest: /srv
+
+  - name: Move files to html dir
+    command: mv /srv /var/www/html
+
+- hosts: web02
+  become: true
+  vars:
+     contents: "{{ lookup('env', 'AMINAME') }}"
+#      region: us-east-2
+  tasks:
+  - ec2_ami:
+     aws_access_key: xxxxxxxxxxxxxxx
+     aws_secret_key: xxxxxxxxxxxxxxxxxx
+     region: us-east-2
+     instance_id: i-03b6d932b0f999cd4
+     wait: yes
+     name: "{{ contents }}"
+     tags:
+       Name: "{{ contents }}"
+       Service: TestService
+    register: image
