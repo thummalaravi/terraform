@@ -1,0 +1,12 @@
+---
+-
+  hosts: webserver
+  become: true
+  tasks:
+
+    - pip:
+       name: "{{ item }}"
+      with_items:
+       - boto
+       - boto3
+       - botocore
