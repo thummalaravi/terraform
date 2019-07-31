@@ -1,6 +1,54 @@
+---
+-
+  hosts: webservers
+  become: true
+  tasks:
+
+
+  - name: Remove old files srv
+    file:
+      path: /srv
+      state: absent
+
+
+  - name: Remove old files in html
+    file:
+      path: /var/www/html/
+      state: absent
+  -
+    git:
+        repo: https://github.com/thummalaravi/website.git
+        dest: /srv
+
+  - name: Move files to html dir
+    command: mv /srv /var/www/html
+
+- hosts: web02
+  become: true
+  vars:
+     contents: "{{ lookup('env', 'AMINAME') }}"
+#      region: us-east-2
+  tasks:
+  - ec2_ami:
+     aws_access_key: AKIA3TV3X6X4EAIU4JNZ
+     aws_secret_key: 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
+     region: us-east-2
+     instance_id: i-03b6d932b0f999cd4
+     wait: yes
+     name: "{{ contents }}"
+     tags:
+       Name: "{{ contents }}"
+       Service: TestService
+    register: image
+ubuntu@ip-10-10-0-115:/etc/ansible/playbooks$ logout
+Connection to 10.10.0.115 closed.
+jenkins@ip-10-10-0-22:~/workspace/webbrowser$ ls
+'About us.html'   Promotions.html   Thankyou.html   index.html   main.tf     project16.tf    script.sh           terraform.tfstate.backup
+ Menu.html        Review.html       data.tf         lunch.jpg    place.jpg   project16.tf~   terraform.tfstate
+jenkins@ip-10-10-0-22:~/workspace/webbrowser$ cat main.tf
 provider "aws" {
-  access_key = "xxxxxxxxxxxxxxxxxxxxxxx"
-  secret_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  access_key = "xxxxxxxxxxxxx"
+  secret_key = "xxxxxxxxxxxx"
   region     = "us-east-2"
 }
 
@@ -87,7 +135,7 @@ resource "aws_default_route_table" "project16_rt" {
 resource "aws_route_table" "project16_rt_pvt" {
   vpc_id = "${aws_vpc.project16_customised.id}"
   tags = {
-    Name = "project16_rt_pvt" 
+    Name = "project16_rt_pvt"
   }
   route {
     cidr_block = "0.0.0.0/0"
@@ -136,7 +184,7 @@ resource "aws_route_table_association" "project16_rt_ass_1c" {
   route_table_id = "${aws_default_route_table.project16_rt.id}"
 }
 
-# pvt routetable_2a association 
+# pvt routetable_2a association
 resource "aws_route_table_association" "project16_rt_ass_2a" {
   subnet_id      = "${aws_subnet.project16_pvt_subnet_a2.id}"
   route_table_id = "${aws_route_table.project16_rt_pvt.id}"
@@ -184,71 +232,64 @@ resource "aws_security_group" "project16_sg" {
   }
  }
 
-# launch configuration
-resource "aws_launch_configuration" "project16_conf" {
-  name_prefix   = "project16-lc"
-  image_id                    = "${data.aws_ami.ubuntu.id}"
+
+
+resource "aws_instance" "acess" {
+  ami           = "ami-08fba854c7827042b"
   instance_type = "t2.micro"
-  associate_public_ip_address = true
-  security_groups =["${aws_security_group.project16_sg.id}"]
-  lifecycle {
-    create_before_destroy = true
+  associate_public_ip_address = "true"
+  subnet_id = "${aws_subnet.project16_public_subnet_a1.id}"
+  vpc_security_group_ids = ["${aws_security_group.project16_sg.id}"]
+  #key_name = "${var.key_name}"
+  tags=  {
+        Name = "acess"
   }
 }
 
-# creating auto-scaling group
-resource "aws_autoscaling_group" "project16_auto" {
-  availability_zones = ["us-east-2a"]
-  name = "project16_auto"
-  launch_configuration = "${aws_launch_configuration.project16_conf.name}"
-  vpc_zone_identifier  = ["${aws_subnet.project16_pvt_subnet_a2.id}","${aws_subnet.project16_pvt_subnet_b2.id}",
-	  "${aws_subnet.project16_pvt_subnet_c2.id}" ]
-  desired_capacity   = 2
-  max_size           =4
-  min_size           = 1
-  load_balancers = ["${aws_elb.project16_elb.name}"]
-  tag {
-    key                 = "project16"
-    value               = "newproject16"
-    propagate_at_launch = true
-  }
-  
-}
-
-# creating elastic ip
-resource "aws_eip" "project16_eip" {
-  vpc = true
-}
-
-# creating elastic load balancer
-resource "aws_elb" "project16_elb"{
-  name = "project16-elb"
-  subnets = ["${aws_subnet.project16_public_subnet_a1.id}", "${aws_subnet.project16_public_subnet_b1.id}", 
-	  "${aws_subnet.project16_public_subnet_c1.id}"]
-  security_groups =["${aws_security_group.project16_sg.id}"]
-  listener{ 
-    instance_port = 80
-    instance_protocol = "http"
-    lb_port = 80
-    lb_protocol ="http"
-  }
-  cross_zone_load_balancing = true
-}
-
-# route 53
-resource "aws_route53_zone" "raviproject2" {
-	name = "raviproject2.tk"
-}
-
-resource "aws_route53_record" "raviproject2" {
-#terraform import aws_route53_zone.raviproject2. Z264VR5H0D90T1
-  zone_id = "${aws_route53_zone.raviproject2.id}"
-  name    = "project13.raviproject2.tk"
-  type    = "A"
-  alias {
-   name                   = "${aws_elb.project16_elb.dns_name}"
-   zone_id                = "${aws_elb.project16_elb.zone_id}"
-    evaluate_target_health = true
+resource "aws_instance" "control" {
+  ami           = "ami-08fba854c7827042b"
+  instance_type = "t2.micro"
+  associate_public_ip_address = "true"
+  subnet_id = "${aws_subnet.project16_pvt_subnet_a2.id}"
+  vpc_security_group_ids = ["${aws_security_group.project16_sg.id}"]
+  #key_name = "${var.key_name}"
+  tags = {
+        Name = "control"
   }
 }
 
+resource "aws_instance" "web01" {
+  ami           = "ami-08fba854c7827042b"
+  instance_type = "t2.micro"
+  associate_public_ip_address = "true"
+  subnet_id = "${aws_subnet.project16_pvt_subnet_b2.id}"
+  vpc_security_group_ids = ["${aws_security_group.project16_sg.id}"]
+  #key_name = "${var.key_name}"
+  tags =  {
+        Name = "web01"
+  }
+}
+
+resource "aws_instance" "web02" {
+  ami           = "ami-08fba854c7827042b"
+  instance_type = "t2.micro"
+  associate_public_ip_address = "true"
+  subnet_id = "${aws_subnet.project16_pvt_subnet_c2.id}"
+  vpc_security_group_ids = ["${aws_security_group.project16_sg.id}"]
+  #key_name = "${var.key_name}"
+  tags = {
+        Name = "web02"
+  }
+}
+
+resource "aws_instance" "db_server" {
+  ami           = "ami-08fba854c7827042b"
+  instance_type = "t2.micro"
+  associate_public_ip_address = "true"
+  subnet_id = "${aws_subnet.project16_pvt_subnet_b2.id}"
+  vpc_security_group_ids = ["${aws_security_group.project16_sg.id}"]
+  #key_name = "${var.key_name}"
+  tags = {
+        Name = "db_server"
+  }
+}
