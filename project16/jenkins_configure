@@ -1,0 +1,5 @@
+#!/bin/sh
+
+ssh -i /home/ubuntu/key -o BatchMode=yes -o StrictHostKeyChecking=no ubuntu@10.10.0.115 'bash -s' < script.sh
+
+terraform apply -input=false -auto-approve
