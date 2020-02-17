@@ -30,8 +30,8 @@
 #      region: us-east-2
   tasks:
   - ec2_ami:
-     aws_access_key: AKIA3TV3X6X4EAIU4JNZ
-     aws_secret_key: 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
+     aws_access_key: xxxxxxxxxxx
+     aws_secret_key: xxxxxxxxxxxxxxx
      region: us-east-2
      instance_id: i-03b6d932b0f999cd4
      wait: yes
